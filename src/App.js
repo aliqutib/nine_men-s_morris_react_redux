@@ -2,40 +2,109 @@ import { useEffect, useState } from "react";
 import PlayArea from "./PlayArea";
 import StatusBar from "./StatusBar";
 
-function App() {
+//REDUX
+import { connect } from "react-redux";
+import { placePiece } from "./actions/holderAction";
 
-  // Local UI/game state (no Redux)
-  const [turn, setTurn] = useState("blue");
-  const [holders, setHolders] = useState([]);
-  const [blueCount, setBlueCount] = useState(9);
-  const [redCount, setRedCount] = useState(9);
-  const [placingCount, setPlacingCount] = useState(18);
+function App(props) {
+
+  const {holders, placingCount, history, turn, redCount, blueCount, message } = props;
+  //const [turn, setTurn] = useState("blue");
+  //const [holders, setHolders] = useState([]);
+  //const [blueCount, setBlueCount] = useState(9);
+  //const [redCount, setRedCount] = useState(9);
+  //const [placingCount, setPlacingCount] = useState(18);
   const [moveBlinking, setMoveBlinking] = useState(false);
   const [moved, setMoved] = useState(-1);
-  const [message, setMessage] = useState(null);
-  const [history, setHistory] = useState([]);
+  //const [message, setMessage] = useState(null);
+  //const [history, setHistory] = useState([]);
   const [blinkIds, setBlinkIds] = useState(new Set());
 
   const xAdjacent = [];
   const yAdjacent = [[0,9,21],[3,10,18],[6,11,15],[1,4,7],[16,19,22],[8,12,17],[5,13,20],[2,14,23]];
 
   for (let i=0; i<24; i+=3)
-    xAdjacent.push([i, i+1, i+2]);
+  xAdjacent.push([i, i+1, i+2]);
 
   function getXLine(id) {
-    for (let i=0; i<8; i++)
+  for (let i=0; i<8; i++)
       for (let j=0; j<3; j++)
-        if (xAdjacent[i][j]===id)
+      if (xAdjacent[i][j]===id)
           return xAdjacent[i];
   }
 
   function getYLine(id) {
-    for (let i=0; i<8; i++)
+  for (let i=0; i<8; i++)
       for (let j=0; j<3; j++)
-        if (yAdjacent[i][j]===id)
+      if (yAdjacent[i][j]===id)
           return yAdjacent[i];
   }
 
+  const handleClick = (id) => {
+
+    console.log('Clicked holder id: ', id);
+
+    const xL = getXLine(id); //[0,1,2] 1 is clicked
+    const yL = getYLine(id);
+
+    const xN = (id===xL[1]) ? [xL[0], xL[2]] : [xL[1]];
+    const yN = (id===yL[1]) ? [yL[0], yL[2]] : [yL[1]];
+
+    //2. Case II (placing the piece)
+    if (!holders[id].filled && (placingCount)>0 && message===null)
+    {
+      props.placePiece(id);
+      return;
+    }
+
+  }
+
+  // Derive the holders array to include local blink overlay
+  const renderedHolders = holders.map(h => ({ ...h, blink: blinkIds.has(h.id) }));
+
+  return (
+    <div className="App">
+      <div className="game-wrapper">
+        <PlayArea 
+          holders={renderedHolders}
+          handleClick={handleClick}
+        />
+      </div>
+
+      <StatusBar
+        blueCount={blueCount}
+        redCount={redCount} 
+        placingCount={placingCount}
+        turn={turn}
+        message={message}
+      />
+    </div>
+  );
+}
+
+// AI highlighted: `rootReducer` uses `combineReducers({ holdersReducer })`, so state shape is `{ holdersReducer: { holders, ... } }`.
+// AI highlighted: mapping `holders: state.holders` will be undefined — use `state.holdersReducer.holders` instead.
+const mapStateToProps = (state) => ({
+  holders: state.holdersReducer.holders,
+  placingCount: state.holdersReducer.placingCount,
+  history: state.holdersReducer.history,
+  turn: state.holdersReducer.turn,
+  redCount: state.holdersReducer.redCount,
+  blueCount: state.holdersReducer.blueCount,
+  message: state.holdersReducer.message
+})
+
+const mapDispatchToProps = (dispatch) => ({
+  placePiece: (id)=> dispatch(placePiece(id))
+})
+
+export default connect(mapStateToProps, mapDispatchToProps)(App);
+
+
+
+/*
+
+/*
   // Helper to recompute inTriplet flags
   function recomputeTriplets(hs) {
     const res = hs.map(h => ({ ...h, inTriplet: false }));
@@ -56,7 +125,8 @@ function App() {
     }
     return res;
   }
-
+    */
+/*
   useEffect(()=>{
     const newholders = [];
     for (let i=0; i<24; i++)
@@ -73,6 +143,7 @@ function App() {
 
   }, []);
 
+
   // Local undo that restores last snapshot from local history
   function handleUndo() {
     if (!history || history.length===0) return;
@@ -86,12 +157,14 @@ function App() {
     setMessage(prev.mes);
   }
 
+
   function placePieceLocal(id) {
     // validation
     if (placingCount <= 0) return;
-    if (message) return; // don't allow placing while in pick mode
+    if (message) return; 
     if (holders[id].filled) return;
 
+    //saving previous state for keeping track of history
     const prevSnapshot = { holders: holders, turnCount: placingCount, redC: redCount, blueC: blueCount, turnS: turn, mes: message };
 
     // place piece
@@ -135,6 +208,7 @@ function App() {
     setTurn(nextTurn);
     setMessage(msg);
   }
+
 
   function pickPieceLocal(id) {
     // validation: must be a valid bordered candidate
@@ -217,15 +291,6 @@ function App() {
     setMessage(msg);
   }
 
-  const handleClick = (id) => {
-
-    console.log('Clicked holder id: ', id);
-
-    const xL = getXLine(id); //[0,1,2] 1 is clicked
-    const yL = getYLine(id);
-
-    const xN = (id===xL[1]) ? [xL[0], xL[2]] : [xL[1]];
-    const yN = (id===yL[1]) ? [yL[0], yL[2]] : [yL[1]];
 
     //1. Case I (picking the piece)
     if (message && holders[id].filled && holders[id].piecePlaced!==turn)
@@ -235,12 +300,6 @@ function App() {
       return;
     }
 
-    //2. Case II (placing the piece)
-    else if (!holders[id].filled && (placingCount)>0 && message===null)
-    {
-      placePieceLocal(id);
-      return;
-    }
 
     //3. Case III (selecting movable piece)
     else if (holders[id].filled && holders[id].piecePlaced===turn && (placingCount)<=0 && !moveBlinking && message===null)
@@ -248,8 +307,11 @@ function App() {
       console.log('is movable piece id ', id)
       const blinkSet = new Set();
       (xN.concat(yN)).forEach(n => {
-        if (!holders[n].filled) blinkSet.add(n);
+        if (!holders[n].filled) 
+          blinkSet.add(n);
       });
+
+      console.log(blinkSet);
 
       setMoved(id);
       setMoveBlinking(true);
@@ -284,30 +346,5 @@ function App() {
         return;
       }
     }
-  }
+  */
 
-  // Derive the holders array to include local blink overlay
-  const renderedHolders = holders.map(h => ({ ...h, blink: blinkIds.has(h.id) }));
-
-  return (
-    <div className="App">
-      <div className="game-wrapper">
-        <PlayArea 
-          holders={renderedHolders}
-          handleClick={handleClick}
-        />
-      </div>
-
-      <StatusBar
-        blueCount={blueCount}
-        redCount={redCount} 
-        placingCount={placingCount}
-        turn={turn}
-        message={message}
-        handleUndo={handleUndo}
-      />
-    </div>
-  );
-}
-
-export default App;
