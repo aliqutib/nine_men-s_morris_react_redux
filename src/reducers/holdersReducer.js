@@ -1,4 +1,4 @@
-import {getXLine, getYLine} from "../utils/lines";
+import {getXLine, getYLine, recomputeTriplets} from "../utils/helperMethods";
 
 const newholders = []; 
     for (let i=0; i<24; i++)
@@ -151,11 +151,17 @@ function pickPieceLocal(state,id) {
     }
 }
 
-function selectPiece(staet, id){
+function selectPiece(state, id){
     
     const {holders, turn, placingCount, message, moveBlinking} = state;
 
-    
+    const xL = getXLine(id); //[0,1,2] 1 is clicked
+    const yL = getYLine(id);
+
+    const xN = (id===xL[1]) ? [xL[0], xL[2]] : [xL[1]];
+    const yN = (id===yL[1]) ? [yL[0], yL[2]] : [yL[1]];
+
+
       console.log('is movable piece id ', id)
       const blinkSet = new Set();
       (xN.concat(yN)).forEach(n => {
@@ -180,6 +186,8 @@ function selectPiece(staet, id){
 
 function movePieceLocal(state, from, to) {
   
+    console.log('Don;t pass')
+
     const {holders, message, turn, } = state;
     // validation
     if (!holders[from].filled) return;
@@ -188,6 +196,8 @@ function movePieceLocal(state, from, to) {
     if (message) return; // cannot move while in pick mode
 
 //    const prevSnapshot = { holders: holders, turnCount: placingCount, redC: redCount, blueC: blueCount, turnS: turn, mes: message };
+
+    console.log('Pass Validation')
 
     let newholders = holders.map(h => {
         if (h.id === from) return { id: from, filled:false, piecePlaced:null, inTriplet:false, border:null, blink:false };

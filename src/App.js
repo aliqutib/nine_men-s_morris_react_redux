@@ -8,7 +8,7 @@ import { pickPiece, placePiece, selectPiece, movePiece } from "./actions/holderA
 
 function App(props) {
 
-  const {holders, placingCount, history, turn, redCount, blueCount, message } = props;
+  const {holders, placingCount, history, turn, redCount, blueCount, message, moveBlinking } = props;
   //const [turn, setTurn] = useState("blue");
   //const [holders, setHolders] = useState([]);
   //const [blueCount, setBlueCount] = useState(9);
@@ -25,11 +25,6 @@ function App(props) {
 
     console.log('Clicked holder id: ', id);
 
-    const xL = getXLine(id); //[0,1,2] 1 is clicked
-    const yL = getYLine(id);
-
-    const xN = (id===xL[1]) ? [xL[0], xL[2]] : [xL[1]];
-    const yN = (id===yL[1]) ? [yL[0], yL[2]] : [yL[1]];
 
     //1. Case I (picking the piece)
     if (message && holders[id].filled && holders[id].piecePlaced!==turn)
