@@ -1,3 +1,5 @@
+import {getXLine, getYLine} from "../utils/lines";
+
 const newholders = []; 
     for (let i=0; i<24; i++)
         newholders.push({
@@ -9,27 +11,6 @@ const newholders = [];
             blink : false
     });
 
-const xAdjacent = [];
-const yAdjacent = [[0,9,21],[3,10,18],[6,11,15],[1,4,7],[16,19,22],[8,12,17],[5,13,20],[2,14,23]];
-
-for (let i=0; i<24; i+=3)
-xAdjacent.push([i, i+1, i+2]);
-
-function getXLine(id) {
-for (let i=0; i<8; i++)
-    for (let j=0; j<3; j++)
-    if (xAdjacent[i][j]===id)
-        return xAdjacent[i];
-}
-
-function getYLine(id) {
-for (let i=0; i<8; i++)
-    for (let j=0; j<3; j++)
-    if (yAdjacent[i][j]===id)
-        return yAdjacent[i];
-}
-
-
 const initialState = {
     holders: newholders,
     placingCount: 18,
@@ -37,7 +18,9 @@ const initialState = {
     turn: "blue",
     redCount: 9,
     blueCount: 9,
-    message: null
+    message: null,
+    moveBlinking: false,
+    movedId: -1
 }
 
 
@@ -45,17 +28,16 @@ function holdersReducer (state=initialState, action) {
     switch(action.type) 
     {
         case 'PLACING_PIECE': 
-            // AI highlighted: calling `placePieceLocal` but not returning its result.
-            // AI highlighted: reducer must return the new state object; ignoring the return
-            // will keep props/state unchanged in components (props fields appear undefined).
             return placePieceLocal(state, action.payload.id);
 
         case 'PICK_PIECE':
-            break;
+            return pickPieceLocal(state, action.payload.id);
 
+        case 'SELECT_PIECE':
+            return selectPiece(state, action.payload.id);
 
         case 'MOVE_PIECE':
-            break;
+            return movePieceLocal(state, state.movedId, action.payload.id);
             
         case 'UNDO':
             break;
@@ -78,10 +60,7 @@ export default holdersReducer;
     if (message) return; 
     if (holders[id].filled) return;
 
-    //saving previous state for keeping track of history
-    // AI highlighted: `prevSnapshot.holders` is a reference to the same `holders` array
-    // AI highlighted: mutate-safe snapshot should clone `holders` (e.g. `holders.map(h=>({...h}))`) to avoid later mutations altering history entries
-    const prevSnapshot = {}
+ //   const prevSnapshot = {}
     //{ holders: holders, turnCount: placingCount, redC: redCount, blueC: blueCount, turnS: turn, mes: message};
     
 
@@ -115,24 +94,141 @@ export default holdersReducer;
         });
 
         msg = (turn === "blue") ? "pick one piece of red" : "pick one piece of blue";
-        // turn stays the same when a triplet was created
     } 
     else 
-        // no triplet — flip turn
         nextTurn = (turn === "blue") ? "red" : "blue";
 
     return{
         ...state,
         holders: newholders,
-        history: [...history, prevSnapshot],
+     //   history: [...history, prevSnapshot],
         placingCount: placingCount -1,
         message: msg,
         turn: nextTurn
     }
 
-    // setHistory([...history, prevSnapshot]);
-    // setHolders(newholders);
-    // setPlacingCount(placingC);
-    // setTurn(nextTurn);
-    // setMessage(msg);
-  }
+}
+
+function pickPieceLocal(state,id) {
+    // validation: must be a valid bordered candidate
+
+    const {holders, redCount, blueCount, turn} = state;
+
+    if (!holders[id].border) return;
+
+
+//    const prevSnapshot = { holders: holders, turnCount: placingCount, redC: redCount, blueC: blueCount, turnS: turn, mes: message };
+
+    const targetColor = holders[id].piecePlaced;
+
+    let newholders = holders.map(h => {
+        if (h.id===id && h.border) return { id, filled:false, piecePlaced:null, inTriplet:false, border:null, blink:false };
+        return { ...h, border: null };
+    });
+
+    // recompute triplets (some inTriplet may have been broken)
+    newholders = recomputeTriplets(newholders);
+
+    let redC = redCount;
+    let blueC = blueCount;
+    if (targetColor === 'red') redC -= 1;
+    if (targetColor === 'blue') blueC -= 1;
+
+    let msg = null;
+    if (redC < 3) msg = 'Blue Wins';
+    else if (blueC < 3) msg = 'Red Wins';
+
+    // flip turn after a pick
+    const nextTurn = (turn === "blue") ? "red" : "blue";
+
+    return{
+        ...state,
+        holders: newholders,
+        redCount: redC,
+        blueCount: blueC,
+        message: msg,
+        turn: nextTurn
+    }
+}
+
+function selectPiece(staet, id){
+    
+    const {holders, turn, placingCount, message, moveBlinking} = state;
+
+    
+      console.log('is movable piece id ', id)
+      const blinkSet = new Set();
+      (xN.concat(yN)).forEach(n => {
+        if (!holders[n].filled) 
+          blinkSet.add(n);
+      });
+
+      const renderedHolders = holders.map(h => ({ ...h, blink: blinkSet.has(h.id) }));
+
+      console.log(blinkSet);
+
+      return{
+        ...state,
+        holders: renderedHolders,
+        movedId: id,
+        moveBlinking: true
+      }
+
+    
+
+}
+
+function movePieceLocal(state, from, to) {
+  
+    const {holders, message, turn, } = state;
+    // validation
+    if (!holders[from].filled) return;
+    if (holders[from].piecePlaced !== turn) return;
+    if (holders[to].filled) return;
+    if (message) return; // cannot move while in pick mode
+
+//    const prevSnapshot = { holders: holders, turnCount: placingCount, redC: redCount, blueC: blueCount, turnS: turn, mes: message };
+
+    let newholders = holders.map(h => {
+        if (h.id === from) return { id: from, filled:false, piecePlaced:null, inTriplet:false, border:null, blink:false };
+        if (h.id === to) return { id: to, filled:true, piecePlaced: turn, inTriplet:false, border:null, blink:false };
+        return { ...h, border: null };
+    });
+
+    // recompute triplets
+    newholders = recomputeTriplets(newholders);
+
+    // check whether move formed a triplet at `to`
+    const xL = getXLine(to).filter(x=>x!==to);
+    const yL = getYLine(to).filter(y=>y!==to);
+    const isXTriplet = newholders[xL[0]].piecePlaced===newholders[to].piecePlaced && newholders[xL[1]].piecePlaced===newholders[to].piecePlaced;
+    const isYTriplet = newholders[yL[0]].piecePlaced===newholders[to].piecePlaced && newholders[yL[1]].piecePlaced===newholders[to].piecePlaced;
+
+    let msg = null;
+    let nextTurn = turn;
+
+    if (isXTriplet || isYTriplet) {
+        // mark opponent candidate pieces with border
+        newholders = newholders.map(h => {
+            if (h.piecePlaced && h.piecePlaced!==turn && !h.inTriplet) return { ...h, border: "5px solid black" };
+            return h;
+        });
+        msg = (turn === "blue") ? "pick one piece of red" : "pick one piece of blue";
+    } else {
+        // flip turn
+        nextTurn = (turn === "blue") ? "red" : "blue";
+    }
+
+    newholders = newholders.map(h => ({ ...h, blink:false }));
+
+
+    return{
+        ...state,
+        holders: newholders,
+        turn: nextTurn,
+        message: msg,
+        moveBlinking: false,
+        movedId: -1
+    }
+
+}

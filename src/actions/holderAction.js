@@ -1,4 +1,4 @@
-import { PLACING_PIECE, PICK_PIECE, MOVE_PIECE, UNDO } from "./types";
+import { PLACING_PIECE, PICK_PIECE, MOVE_PIECE, UNDO, SELECT_PIECE } from "./types";
 
 /*
   Approach B (implemented here):
@@ -18,6 +18,12 @@ export const pickPiece = (id) => ({
   type: PICK_PIECE,
   payload: { id }
 });
+
+export const selectPiece = (id) => ({
+  type: SELECT_PIECE,
+  payload: { id }
+});
+
 
 export const movePiece = (from, to) => ({
   type: MOVE_PIECE,
