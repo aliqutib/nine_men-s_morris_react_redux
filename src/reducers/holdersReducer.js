@@ -186,13 +186,13 @@ function selectPiece(state, id){
 
 function movePieceLocal(state, from, to) {
   
-    console.log('Don;t pass')
+    console.log(state)
 
     const {holders, message, turn, } = state;
     // validation
     if (!holders[from].filled) return;
     if (holders[from].piecePlaced !== turn) return;
-    if (holders[to].filled) return;
+    if (holders[to].filled==null) return;
     if (message) return; // cannot move while in pick mode
 
 //    const prevSnapshot = { holders: holders, turnCount: placingCount, redC: redCount, blueC: blueCount, turnS: turn, mes: message };
@@ -230,7 +230,6 @@ function movePieceLocal(state, from, to) {
     }
 
     newholders = newholders.map(h => ({ ...h, blink:false }));
-
 
     return{
         ...state,

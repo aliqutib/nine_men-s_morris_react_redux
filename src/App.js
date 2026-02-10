@@ -23,8 +23,6 @@ function App(props) {
 
   const handleClick = (id) => {
 
-    console.log('Clicked holder id: ', id);
-
 
     //1. Case I (picking the piece)
     if (message && holders[id].filled && holders[id].piecePlaced!==turn)
@@ -41,7 +39,7 @@ function App(props) {
     }
 
     //3. Case III (selecting the piece)
-    if (holders[id].filled && holders[id].piecePlaced===turn && (placingCount)<=0 && message===null)
+    if (holders[id].filled && holders[id].piecePlaced===turn && (placingCount)<=0 && !moveBlinking && message===null)
     {
       props.selectPiece(id);
       return;
@@ -50,6 +48,7 @@ function App(props) {
     //4. Case IV (moving the selected piece or re-selecting)
     if (moveBlinking && message===null)
     {
+      console.log('CASE 4')
       props.movePiece(id);
       return;
     }
@@ -85,7 +84,8 @@ const mapStateToProps = (state) => ({
   turn: state.holdersReducer.turn,
   redCount: state.holdersReducer.redCount,
   blueCount: state.holdersReducer.blueCount,
-  message: state.holdersReducer.message
+  message: state.holdersReducer.message,
+  moveBlinking: state.holdersReducer.moveBlinking
 })
 
 const mapDispatchToProps = (dispatch) => ({
