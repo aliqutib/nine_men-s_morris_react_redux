@@ -1,7 +1,42 @@
-import React from "react";
+import { connect } from "react-redux";
+import { pickPiece, placePiece, selectPiece, movePiece } from "./actions/holderAction";
 
-export default function PlayArea({holders, handleClick}){
+
+function PlayArea(props){
     
+    const {holders, placingCount, turn, message, moveBlinking } = props;
+
+    const handleClick = (id)=> {
+           //1. Case I (picking the piece)
+        if (message && holders[id].filled && holders[id].piecePlaced!==turn)
+        {
+        props.pickPiece(id);
+        return;
+        }
+
+        //2. Case II (placing the piece)
+        if (!holders[id].filled && (placingCount)>0 && message===null)
+        {
+        props.placePiece(id);
+        return;
+        }
+
+        //3. Case III (selecting the piece)
+        if (holders[id].filled && holders[id].piecePlaced===turn && (placingCount)<=0 && !moveBlinking && message===null)
+        {
+        props.selectPiece(id);
+        return;
+        }
+
+        //4. Case IV (moving the selected piece or re-selecting)
+        if (moveBlinking && message===null)
+        {
+        props.movePiece(id);
+        return;
+        }
+    
+    }
+
     return(
         <div className="board-container">
             <svg className="board-svg" viewBox="0 0 500 500" width="700" height="700">
@@ -50,3 +85,21 @@ export default function PlayArea({holders, handleClick}){
     );
 
 }
+
+const mapStateToProps = (state) => ({
+  holders: state.holdersReducer.holders,
+  placingCount: state.holdersReducer.placingCount,
+  history: state.holdersReducer.history,
+  turn: state.holdersReducer.turn,
+  message: state.holdersReducer.message,
+  moveBlinking: state.holdersReducer.moveBlinking
+})
+
+const mapDispatchToProps = (dispatch) => ({
+  placePiece: (id)=> dispatch(placePiece(id)),
+  pickPiece:  (id)=>dispatch(pickPiece(id)),
+  selectPiece: (id)=>dispatch(selectPiece(id)),
+  movePiece: (id)=>dispatch(movePiece(id))
+})
+
+export default connect(mapStateToProps, mapDispatchToProps)(PlayArea)

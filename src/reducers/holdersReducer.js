@@ -56,9 +56,9 @@ export default holdersReducer;
     const {holders, placingCount, turn, redCount, blueCount, message, history } = state;
 
     // validation
-    if (placingCount <= 0) return;
-    if (message) return; 
-    if (holders[id].filled) return;
+    if (placingCount <= 0) return null;
+    if (message) return null; 
+    if (holders[id].filled) return null;
 
  //   const prevSnapshot = {}
     //{ holders: holders, turnCount: placingCount, redC: redCount, blueC: blueCount, turnS: turn, mes: message};
@@ -114,7 +114,7 @@ function pickPieceLocal(state,id) {
 
     const {holders, redCount, blueCount, turn} = state;
 
-    if (!holders[id].border) return;
+    if (!holders[id].border) return null;
 
 
 //    const prevSnapshot = { holders: holders, turnCount: placingCount, redC: redCount, blueC: blueCount, turnS: turn, mes: message };
@@ -190,10 +190,10 @@ function movePieceLocal(state, from, to) {
 
     const {holders, message, turn, } = state;
     // validation
-    if (!holders[from].filled) return;
-    if (holders[from].piecePlaced !== turn) return;
-    if (holders[to].filled==null) return;
-    if (message) return; // cannot move while in pick mode
+    if (!holders[from].filled) return null;
+    if (holders[from].piecePlaced !== turn) return null;
+    if (holders[to].filled==null) return null;
+    if (message) return null; // cannot move while in pick mode
 
 //    const prevSnapshot = { holders: holders, turnCount: placingCount, redC: redCount, blueC: blueCount, turnS: turn, mes: message };
 

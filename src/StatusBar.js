@@ -1,4 +1,6 @@
-export default function StatusBar ({blueCount, redCount, placingCount, turn, message, handleUndo}) {
+import { connect } from "react-redux";
+
+function StatusBar ({blueCount, redCount, placingCount, turn, message}) {
 
     return (
         <article className="status">
@@ -16,10 +18,20 @@ export default function StatusBar ({blueCount, redCount, placingCount, turn, mes
             </section>
             <section>
                 <button
-                    onClick={handleUndo}
+                    onClick={()=>console.log('to be implemented')}
                 >UNDO</button>
             </section>
         </article>
     );
 
 }
+
+const mapStateToProps = (state) => ({
+  blueCount: state.holdersReducer.blueCount,
+  redCount: state.holdersReducer.redCount,
+  placingCount: state.holdersReducer.placingCount,
+  turn: state.holdersReducer.turn,
+  message: state.holdersReducer.message,
+})
+
+export default connect(mapStateToProps)(StatusBar)

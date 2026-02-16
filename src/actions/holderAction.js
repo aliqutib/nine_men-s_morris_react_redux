@@ -25,9 +25,9 @@ export const selectPiece = (id) => ({
 });
 
 
-export const movePiece = (from, to) => ({
+export const movePiece = (id) => ({
   type: MOVE_PIECE,
-  payload: { from, to }
+  payload: { id }
 });
 
 export const undo = () => ({
